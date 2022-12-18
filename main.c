@@ -27,11 +27,14 @@ List * init_list();
 void add_to_list(List *head, FILE *fp);
 List * make_list();
 void print(List *head);
+void del_el(List * el);
 
 int main(){
 	List *first;
-	//add_to_list(head);
 	first = make_list();
+	print(first);
+	del_el(first->next);
+	printf("\n\n\n");
 	print(first);
 }
 
@@ -76,12 +79,20 @@ List * make_list(){
 	List *head;
 	fp = fopen("films.txt", "r");
 	head = init_list(fp);
-	//for(int i=0; i<29; i++)
 	while(!feof(fp))
 		add_to_list(head, fp);
 	fclose(fp);
 
 	return head;
+}
+
+void del_el(List * el){
+	List *prev, *next;
+	prev = el->prev;
+	next = el->next;
+	prev->next = el->next;
+	next->prev = el->prev;
+	free(el);
 }
 
 void print(List *head){
