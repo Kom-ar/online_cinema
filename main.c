@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
+#include <string.h>
 
 typedef struct film{
 	char name[100];
@@ -37,40 +38,43 @@ void resetTermios(void);
 char getch_(int echo);
 char getch(void);
 char getche(void);
-
+void registration_user();
+void log_in();
 
 int main(){
-	List *first, *test;
- 	char c;
- 	int i, n;
+	log_in();
+	//registration_user();
+	// List *first, *test;
+ // 	char c;
+ // 	int i, n;
 
-	first = make_list();
-	print(first);
+	// first = make_list();
+	// print(first);
 
 
-	while(1){
-		c = getch();
-		switch(c){
-			case 'a':
-				first = first->prev;
-				system("clear");
-				print(first);
-				break;
-			case 'd':
-				first = first->next;
-				system("clear");
-				print(first);
-				break;
-			default:
-				system("clear");
-				print(first);
-				printf("Error!!!\n");
-				printf("Use only 'a' or 'd'!!!");
-				break;
+	// while(1){
+	// 	c = getch();
+	// 	switch(c){
+	// 		case 'a':
+	// 			first = first->prev;
+	// 			system("clear");
+	// 			print(first);
+	// 			break;
+	// 		case 'd':
+	// 			first = first->next;
+	// 			system("clear");
+	// 			print(first);
+	// 			break;
+	// 		default:
+	// 			system("clear");
+	// 			print(first);
+	// 			printf("Error!!!\n");
+	// 			printf("Use only 'a' or 'd'!!!");
+	// 			break;
 
-		}
-	}
-	printf("\n\n\n");
+	// 	}
+	// }
+	// printf("\n\n\n");
 }
 
 
@@ -204,4 +208,67 @@ char getch(void){
 /* Read 1 character with echo */
 char getche(void){
   return getch_(1);
+}
+
+void registration_user(){
+	FILE *fp;
+	User *new_user;
+	fp = fopen("users.txt", "a");
+	new_user = (User *)malloc(sizeof(User));
+	printf("Login: ");
+	scanf("%s", new_user->login);
+	printf("Password: ");
+	scanf("%s", new_user->password);
+	printf("Your card number: ");
+	scanf("%s", new_user->card_num);
+	new_user->fav_num = 0;
+	new_user->is_admin = 0;
+	fprintf(fp, "%s\n%s\n%s\n%d\n%d\n", new_user->login, new_user->password, new_user->card_num, new_user->fav_num, new_user->is_admin);
+	fclose(fp);
+
+	printf("User: %s\n", new_user->login);
+	printf("Password: %s\n", new_user->password);
+	printf("Card number: %s\n", new_user->card_num);
+	printf("fav_num: %d\n", new_user->fav_num);
+	printf("Is admin: %d\n", new_user->is_admin);
+
+}
+
+void log_in(){
+	FILE *fp;
+	User *l_user;
+	char log_u[22], log_f[22], password_u[22], password_f[22];
+	fp = fopen("users.txt", "r");
+	l_user = (User *)malloc(sizeof(User));
+	printf("Login: ");
+	scanf("%s", log_u);
+	while(!feof(fp) && strcmp(log_u, l_user->login) != 0){
+		fscanf(fp, "%s", l_user->login);
+	}
+	if(strcmp(log_u, l_user->login) == 0){
+		printf("Password: ");
+		scanf("%s", password_u);
+		fscanf(fp, "%s", l_user->password);
+		if(strcmp(password_u, l_user->password) == 0){
+			printf("Password is correct!\n");
+			fscanf(fp,"%s", l_user->card_num);
+			fscanf(fp, "%d", &(l_user->fav_num));
+			fscanf(fp, "%d", &(l_user->is_admin));
+		}
+		else{
+			printf("Password is uncorrect!\n");
+		}
+	}
+	else{
+		printf("User not found!\n");
+	}
+	fclose(fp);
+	printf("User: %s\n", l_user->login);
+	printf("Password: %s\n", l_user->password);
+	printf("Card number: %s\n", l_user->card_num);
+	printf("fav_num: %d\n", l_user->fav_num);
+	printf("Is admin: %d\n", l_user->is_admin);
+
+
+
 }
