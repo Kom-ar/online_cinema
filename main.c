@@ -39,6 +39,9 @@ char getch_(int echo);
 char getch(void);
 char getche(void);
 void registration_user();
+int cheking_login(User *new_user);
+int cheking_password(User *new_user);
+int cheking_card_num(User *new_user);
 User * log_in();
 List * init_fav_list(User *user, List *film_list);
 List * add_to_fav_list(User *user, List *film_list, List *fav_list);
@@ -52,25 +55,45 @@ void personal_account(User *user, List *head, List *fav_list);
 void change_login(User *user);
 void change_password(User *user);
 void change_card_number(User *user);
-void add_film(List *head);
+int add_film(List *head);
 void delete_film(List *film, User *user, List *fav_list);
+void out_str_center(char* string, int length_str);
+void print_films(List* list);
+int is_in_fav_list(List *film, List *fav_list);
+int is_film_in_list(List *film, char name[100]);
+int check_grade(char grade[5]);
+int unique_login(User *user);
 
 int main(){
-	// printf("users = %d\n", file_lines("users.txt"));
-	// printf("films = %d\n", file_lines("films.txt"));
-	// printf("favorites = %d\n", file_lines("favorites/favorites_Virginia"));
 	User *user;
-	// registration_user();
-	// registration_user();
-	// registration_user();
-	// registration_user();
-	user = log_in();
+	int n, f = 1;
+	while(f){
+		system("clear");
+		printf("1|Registration\n");
+		printf("2|Log in\n");
+		printf("3|Exit\n\n\n\n");
+		n = getch();
+		switch(n){
+			case '1':
+				registration_user();
+				break;
+			case '2':
+				if((user = log_in()) != NULL)
+					f = 0;
+				break;
+			case '3':
+				exit(0);
+				break;
+			default:
+				break;
+		}
+	}
 
 	List *first, *first_fav;
 	FILE *films, *fav_films;	
  	char c;
  	char way[50] = "favorites/favorites_";
- 	int i, n;
+ 	int i;
  	strcat(way, user->login);
 	fav_films = fopen(way, "r");
 	films = fopen("films.txt", "r");
@@ -86,11 +109,14 @@ int main(){
 	while(1){
 		switch(main_menu()){
 			case '1':
+				system("clear");
 				first_fav = film_catalog(first, first_fav, user);
 				break;
 			case '2':
-				if(user->fav_num == 0)
+				if(user->fav_num == 0){
 					printf("Your favorites list is EMPTY!\n");
+					sleep(1);
+				}
 				else
 					favorites_catalog(first_fav, user);
 				break;
@@ -205,6 +231,8 @@ void print(List *head){
 
 
 
+
+
 	// do{
 	// 	printf("film name - %s", p->films.name);
 	// 	printf("film year - %s", p->films.year);
@@ -261,12 +289,32 @@ void registration_user(){
 	char way[50] = "favorites/favorites_";
 	fp = fopen("users.txt", "a");
 	new_user = (User *)malloc(sizeof(User));
-	printf("Login: ");
-	scanf("%s", new_user->login);
-	printf("Password: ");
-	scanf("%s", new_user->password);
-	printf("Your card number: ");
-	scanf("%s", new_user->card_num);
+	while(1){
+		printf("Login: ");
+		scanf("%s", new_user->login);
+		if(cheking_login(new_user) && !unique_login(new_user)){
+			break;
+		}
+		else
+			continue;
+	}
+	while(1){
+		printf("Password: ");
+		scanf("%s", new_user->password);
+		if(cheking_password(new_user))
+			break;
+		else
+			continue;
+	}
+	while(1){
+		printf("Your card number: ");
+		scanf("%s", new_user->card_num);
+		if(cheking_card_num(new_user))
+			break;
+		else
+			continue;
+
+	}
 	new_user->fav_num = 0;
 	new_user->is_admin = 0;
 	fprintf(fp, "%s\n%s\n%s\n%d\n%d\n", new_user->login, new_user->password, new_user->card_num, new_user->fav_num, new_user->is_admin);
@@ -276,18 +324,13 @@ void registration_user(){
 	fp = fopen(way, "w");
 	fclose(fp);
 
-	printf("User: %s\n", new_user->login);
-	printf("Password: %s\n", new_user->password);
-	printf("Card number: %s\n", new_user->card_num);
-	printf("fav_num: %d\n", new_user->fav_num);
-	printf("Is admin: %d\n", new_user->is_admin);
 
 }
 
 User * log_in(){
 	FILE *fp;
 	User *l_user;
-	char log_u[22], password_u[22];
+	char log_u[22], password_u[22], pw_f[22];
 	fp = fopen("users.txt", "r");
 	l_user = (User *)malloc(sizeof(User));
 	printf("Login: ");
@@ -296,28 +339,31 @@ User * log_in(){
 		fscanf(fp, "%s", l_user->login);
 	}
 	if(strcmp(log_u, l_user->login) == 0){
-		printf("Password: ");
-		scanf("%s", password_u);
-		fscanf(fp, "%s", l_user->password);
-		if(strcmp(password_u, l_user->password) == 0){
-			printf("Password is correct!\n");
-			fscanf(fp,"%s", l_user->card_num);
-			fscanf(fp, "%d", &(l_user->fav_num));
-			fscanf(fp, "%d", &(l_user->is_admin));
-		}
-		else{
-			printf("Password is uncorrect!\n");
+		fscanf(fp, "%s", pw_f);
+		while(1){
+			printf("Password: ");
+			scanf("%s", password_u);
+			if(strcmp(password_u, pw_f) == 0){
+				printf("Password is correct!\n");
+				strcpy(l_user->password, pw_f);
+				fscanf(fp,"%s", l_user->card_num);
+				fscanf(fp, "%d", &(l_user->fav_num));
+				fscanf(fp, "%d", &(l_user->is_admin));
+				sleep(1);
+				break;
+			}
+			else{
+				printf("Password is uncorrect!Try again!\n");
+				continue;
+			}
 		}
 	}
 	else{
 		printf("User not found!\n");
+		sleep(1);
+		return NULL;
 	}
 	fclose(fp);
-	printf("User: %s\n", l_user->login);
-	printf("Password: %s\n", l_user->password);
-	printf("Card number: %s\n", l_user->card_num);
-	printf("fav_num: %d\n", l_user->fav_num);
-	printf("Is admin: %d\n", l_user->is_admin);
 	return l_user;
 }
 
@@ -380,7 +426,17 @@ List * film_catalog(List *film, List *fav_film, User *user){
 					fav_film = init_fav_list(user, film);
 				}
 				else{
-					fav_film = add_to_fav_list(user, film, fav_film);
+					if(is_in_fav_list(film, fav_film)){
+						printf("This film already in your favorites list!\n");
+						sleep(1);
+						printf("Choose another one!\n");
+						sleep(1);
+					}
+					else{
+						fav_film = add_to_fav_list(user, film, fav_film);
+						printf("Film added to your favorite list!\n");
+						sleep(1);
+					}
 				}
 				print(film);
 				break;
@@ -600,9 +656,14 @@ void change_login(User *user){
 
 	strcpy(old_login, user->login);
 	strcat(old_name, old_login);
-
-	printf("\n\nEnter new login: ");
-	scanf("%s", user->login);
+	while(1){
+		printf("\n\nEnter new login: ");
+		scanf("%s", user->login);
+		if(cheking_login(user))
+			break;
+		else
+			continue;
+	}
 	strcat(new_name, user->login);
 	rename(old_name, new_name);
 
@@ -627,7 +688,7 @@ void change_login(User *user){
 }
 
 void change_password(User *user){
-	char current_pw[22], new_pw[22], log[22];
+	char current_pw[22], new_pw[22], con_pw[22], log[22];
 	int k = 0;
 	FILE *f_old_user_list, *f_new_user_list;
 	f_old_user_list = fopen("users.txt", "r");
@@ -643,12 +704,25 @@ void change_password(User *user){
 		else
 			break;
 	}
-	printf("Enter your new password: ");
-	scanf("%s", new_pw);
-	// printf("Confirm your new password: ");
-	// scanf("%s", new_pw2)
-
-	strcpy(user->password, new_pw);
+	while(1){
+		printf("Enter your new password: ");
+		scanf("%s", user->password);
+		if(cheking_password(user))
+			break;
+		else
+			continue;
+	}
+	while(1){
+		printf("Confirm your password: ");
+		scanf("%s", con_pw);
+		if(strcmp(user->password, con_pw) == 0)
+			break;
+		else{
+			printf("Passwords don't match!\nTry again!\n");
+			continue;
+		}
+	}
+	//strcpy(user->password, new_pw);
 
 	while(!feof(f_old_user_list)){
 		if(k == file_lines("users.txt"))
@@ -675,9 +749,15 @@ void change_card_number(User *user){
 	f_old_user_list = fopen("users.txt", "r");
 	f_new_user_list = fopen("new_users.txt", "w");
 
-	printf("Enter your new card number: ");
-	scanf("%s", new_card_number);
-	strcpy(user->card_num, new_card_number);
+	while(1){
+		printf("Enter your new card number: ");
+		scanf("%s", user->card_num);
+		if(cheking_card_num(user))
+			break;
+		else
+			continue;
+	}
+	//strcpy(user->card_num, new_card_number);
 
 	while(!feof(f_old_user_list)){
 		if(k == file_lines("users.txt"))
@@ -700,19 +780,34 @@ void change_card_number(User *user){
 
 }
 
-void add_film(List *head){
+int add_film(List *head){
 	char name[100], year[10], country[100], genre[100], grade[5];
 	FILE *fp = fopen("films.txt", "r");
 	printf("Enter the name of film: ");
 	fgets(name, 100, stdin);
+	if(is_film_in_list(head, name)){
+		printf("That film is already in the catalog!\n");
+		sleep(1);
+		fclose(fp);
+		return 0;
+	}
 	printf("Enter year: ");
 	fgets(year, 10, stdin);
 	printf("Enter the country or countries: ");
 	fgets(country, 100, stdin);
 	printf("Enter genre or genres: ");
 	fgets(genre, 100, stdin);
-	printf("Enter the grade of film: ");
-	fgets(grade, 5, stdin);
+	while(1){
+		printf("Enter the grade of film: ");
+		fgets(grade, 5, stdin);
+		if(check_grade(grade)){
+			printf("Wrong format!(The grade must be of the form '7.8', '6,5', '3.7', '9.2', etc.)\n");
+			sleep(2);
+			continue;
+		}
+		else
+			break;
+	}
 
 	fclose(fp);
 	List *p, *film;
@@ -811,7 +906,7 @@ void delete_film(List *film, User *user, List *fav_list){
 					FILE *new_users_list = fopen("new_users.txt", "w");
 					char rm_command[65];
 					char mv_command[65];
-					int num_users, f, l = 0;
+					int num_users, q, l = 0;
 					while(k < file_lines("users.txt")){
 						fscanf(old_users_list, "%s", login);
 						fprintf(new_users_list, "%s\n", login);
@@ -853,16 +948,16 @@ void delete_film(List *film, User *user, List *fav_list){
 							fscanf(old_users_list, "%s", login);
 							fprintf(new_users_list, "%s\n", login);
 						}
-						fscanf(old_users_list, "%d", &f);
+						fscanf(old_users_list, "%d", &q);
 						if(l)
-							f--;
+							q--;
 						fprintf(new_users_list, "%d\n", f);
 						fscanf(old_users_list, "%s", login);
 						fprintf(new_users_list, "%s\n", login);
 
 						k += 5;
 						l = 0;
-						f = 0;
+						q = 0;
 					}
 					fclose(old_users_list);
 					fclose(new_users_list);
@@ -888,4 +983,181 @@ void delete_film(List *film, User *user, List *fav_list){
 				break;
 		}
 	}
+}
+
+
+int cheking_password(User *new_user){
+	int ts=0,bukV=0,bukN=0;
+	for(int i=0;i<strlen(new_user->password);i++){
+		if(strlen(new_user->password)>=6&&strlen(new_user->password)<=20){
+			if(('0' <= new_user->password[i]) && (new_user->password[i] <= '9')){
+				ts++;
+			}
+			if(('A' <= new_user->password[i]) && (new_user->password[i] <= 'Z')){
+				bukV++;
+			}
+			if(('a' <= new_user->password[i]) && (new_user->password[i] <= 'z')){
+				bukN++;
+			}
+		}
+	}
+	if((ts > 0) && (bukV > 0) && (bukN > 0))
+		return 1;
+	else{
+		printf("Wrong format!(The minimum length of the password must be 6 characters(maximum 20),\nand must contain at least 1 number, an uppercase letter and a lower letter!)\n");
+		return 0;
+	}
+
+}
+
+int cheking_login(User* new_user){
+	int ts=0,bukV=0,bukN=0;
+	for(int i=0;i<strlen(new_user->login);i++){
+	    if(strlen(new_user->login)>=3&&strlen(new_user->login)<=20){
+			if(('0' <= new_user->login[i]) && (new_user->login[i] <= '9')){
+				ts++;
+			}
+			if(('A' <= new_user->login[i]) && (new_user->login[i] <= 'Z')){
+				bukV++;
+			}
+			if(('a' <= new_user->login[i]) && (new_user->login[i] <= 'z')){
+				bukN++;
+			}
+		}
+    }
+	if((ts > 0) && ((bukV > 0) || (bukN > 0)))
+		return 1;
+    else{
+      printf("Wrong format!(The minimum length of the login must be 3(maximum 20),\nand must contain at least 1 number!)\n");
+      return 0;
+    }
+}
+
+int cheking_card_num(User* new_user){
+	int ts=0;
+	for(int i=0;i<strlen(new_user->card_num);i++){
+		if(('0' <= new_user->card_num[i]) && (new_user->card_num[i] <= '9')){
+			ts++;
+		}
+	}
+	if(ts==16)
+		return 1;
+	else{
+		printf("Wrong format!(The card number must contain exactly 16 digits!)\n");
+		return 0;
+	}
+}
+
+void out_str_center(char* string, int length_str){
+   int m=(length_str-strlen(string))/2;
+   for(int i=0;i<m;i++){
+       printf(" ");
+   }
+   printf("%s",string);
+   for(int i=0;i<m;i++){
+       printf(" ");
+    }
+}
+void print_films(List* list){
+    printf("                              Меню\n");
+    // printf("                                                                                            %c\n",(char)24);
+    printf("                                    ");                    printf("\t\t ====================================\n");
+    printf("                                    ");                    printf("\t\t//                                  \\\\");printf("\n");
+    printf("                                    ");                    printf("\t\t||                                  ||\n");
+    printf("//---------------------------------\\\\");                   printf("\t\t||                                  ||");                    printf("\t\t//---------------------------------\\\\");printf("\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|");out_str_center(list->prev->films.name,35);printf("|");                   printf("\t\t||");out_str_center(list->films.name,40);printf("\t\t||");                    printf("|");out_str_center(list->next->films.name,35);printf("|\n");                    
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("|                                   |");                   printf("\t\t||                                  ||");                    printf("\t\t|                                   |\n");
+    printf("\\\\_________________________________//");                   printf("\t\t||                                  ||");                    printf("\t\t\\\\_________________________________//\n");
+    printf("                                     ");                   printf("\t\t\\\\                                  //\n");
+    printf("                                     ");                   printf("\t\t ==================================== \n");
+    printf("                                  Добавить фильм в избранное - Q\n");
+    printf("                                  Переход между фильмами на клавиши A и D\n");
+    printf("                                  Подробная информацию о фильме - E");
+
+    // char F;
+    // if(scanf("%c",&F)=='E'){
+    //     system("clear");
+    //     printf("                                    ");                    printf(" =========================================\n");
+    //     printf("                                    ");                    printf("//                                       \\\\");printf("\n");
+    //     printf("                                    ");                    printf("||                                       ||\n");
+    //     printf("//---------------------------------\\\\");                   printf("||                                       ||");                    printf("//---------------------------------\\\\");printf("\n");
+    //     printf("|                                   |");                   printf("||                                       ||");                    printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||                                       ||");                    printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||                                       ||");                    printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||");printf("||");out_str_center(list->films.name,40);printf("||");                   printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||");printf("||");out_str_center(list->films.genre,40);printf("||");                   printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||");out_str_center(list->films.country,40);printf("||");                   printf("|                                   |\n");
+    //     printf("|");out_str_center(list->prev->films.name,35);printf("|");                   printf("||");printf("||");out_str_center(list->films.grade,40);printf("||");                   printf("|");out_str_center(list->next->films.name,35);printf("|\n");                                  
+    //     printf("|                                   |");                   printf("||");printf("||");out_str_center(list->films.year,40);printf("||");                   printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||                                       ||");                    printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||                                       ||");                    printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||                                       ||");                    printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||                                       ||");                    printf("|                                   |\n");
+    //     printf("|                                   |");                   printf("||                                       ||");                    printf("|                                   |\n");
+    //     printf("\\\\_________________________________//");                   printf("||                                       ||");                    printf("\\\\_________________________________//\n");
+    //     printf("                                     ");                   printf("\\\\                                       //\n");
+    //     printf("                                     ");                   printf(" ========================================= \n");
+    // }
+}
+
+int is_in_fav_list(List *film, List *fav_list){
+	List *p = fav_list;
+	do{
+		if(strcmp(film->films.name, p->films.name) == 0)
+			return 1;
+		p = p->next;
+	}while(p != fav_list);
+
+	return 0;
+}
+
+int is_film_in_list(List *film, char name[100]){
+	List *p = film;
+	do{
+		if(strcmp(p->films.name, name) == 0)
+			return 1;
+		p = p->next;
+	}while(p != film);
+
+	return 0;
+}
+
+int check_grade(char grade[5]){
+	if('0' > grade[0] || grade[0] > '9')
+		return 1;
+	if(grade[1] != '.')
+		return 1;
+	if('0' > grade[2] || grade[2] > '9')
+		return 1;
+
+	return 0;
+
+}
+
+int unique_login(User *user){
+	FILE *fp = fopen("users.txt", "r");
+	char log[22];
+	while(!feof(fp)){
+		fscanf(fp, "%s", log);
+		if(strcmp(user->login, log) == 0){
+			fclose(fp);
+			printf("This login is already taken!\n");
+			sleep(1);
+
+			return 1;
+		}
+	}
+	fclose(fp);
+	return 0;
 }
