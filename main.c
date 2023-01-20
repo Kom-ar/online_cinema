@@ -48,18 +48,20 @@ int main_menu();
 void fav_to_file(User *user, List *fav_film);
 void change_fav_num(User *user);
 int file_lines(char file_name[50]);
-void personal_account(User *user);
+void personal_account(User *user, List *head, List *fav_list);
 void change_login(User *user);
 void change_password(User *user);
 void change_card_number(User *user);
-
+void add_film(List *head);
+void delete_film(List *film, User *user, List *fav_list);
 
 int main(){
 	// printf("users = %d\n", file_lines("users.txt"));
 	// printf("films = %d\n", file_lines("films.txt"));
 	// printf("favorites = %d\n", file_lines("favorites/favorites_Virginia"));
 	User *user;
-	//registration_user();
+	// registration_user();
+	// registration_user();
 	// registration_user();
 	// registration_user();
 	user = log_in();
@@ -93,15 +95,15 @@ int main(){
 					favorites_catalog(first_fav, user);
 				break;
 			case '3':
-				personal_account(user);
+				personal_account(user, first, first_fav);
 				break;
 			case '4':
 				if(user->fav_num != 0){
 					fav_to_file(user, first_fav);
 					change_fav_num(user);
+					system("rm users.txt");
+					system("mv new_users.txt users.txt");
 				}
-				system("rm users.txt");
-				system("mv new_users.txt users.txt");
 				exit(0);
 				break;
 			default:
@@ -513,35 +515,76 @@ int file_lines(char file_name[50]){
 	return k;
 }
 
-void personal_account(User *user){
+void personal_account(User *user, List *head, List *fav_list){
 	char c;
 	int f = 1;
-	while(f){
-		printf("\n\n\n\n1|Change your login\n");
-		printf("2|Change your password\n");
-		printf("3|Change your card number\n");
-		printf("4|Return to main menu\n\n\n");
+	if(user->is_admin == 1){
+		while(f){
+			system("clear");
+			printf("\n\n\n\n1|Change your login\n");
+			printf("2|Change your password\n");
+			printf("3|Change your card number\n");
+			printf("4|Add new film(A)\n");
+			printf("5|Delete film(A)\n");
+			printf("6|Return to main menu\n\n\n");
 
-		c = getch();
-		switch(c){
-			case '1':
-				change_login(user);
-				system("rm users.txt");
-				system("mv new_users.txt users.txt");
-				break;
-			case '2':
-				change_password(user);
-				system("rm users.txt");
-				system("mv new_users.txt users.txt");
-				break;
-			case '3':
-				change_card_number(user);
-				system("rm users.txt");
-				system("mv new_users.txt users.txt");
-				break;				
-			case '4':
-				f = 0;
-				break;
+			c = getch();
+			switch(c){
+				case '1':
+					change_login(user);
+					system("rm users.txt");
+					system("mv new_users.txt users.txt");
+					break;
+				case '2':
+					change_password(user);
+					system("rm users.txt");
+					system("mv new_users.txt users.txt");
+					break;
+				case '3':
+					change_card_number(user);
+					system("rm users.txt");
+					system("mv new_users.txt users.txt");
+					break;	
+				case '4':
+					add_film(head);
+					break;
+				case '5':
+					delete_film(head, user, fav_list);
+				case '6':
+					f = 0;
+					break;
+			}
+		}
+	}
+	else{
+		while(f){
+			system("clear");
+			printf("\n\n\n\n1|Change your login\n");
+			printf("2|Change your password\n");
+			printf("3|Change your card number\n");
+			printf("4|Return to main menu\n\n\n");
+
+			c = getch();
+			switch(c){
+				case '1':
+					change_login(user);
+					system("rm users.txt");
+					system("mv new_users.txt users.txt");
+					break;
+				case '2':
+					change_password(user);
+					system("rm users.txt");
+					system("mv new_users.txt users.txt");
+					break;
+				case '3':
+					change_card_number(user);
+					system("rm users.txt");
+					system("mv new_users.txt users.txt");
+					break;				
+				case '4':
+					f = 0;
+					break;
+			}
 		}
 	}
 }
@@ -655,4 +698,194 @@ void change_card_number(User *user){
 	fclose(f_old_user_list);
 	fclose(f_new_user_list);
 
+}
+
+void add_film(List *head){
+	char name[100], year[10], country[100], genre[100], grade[5];
+	FILE *fp = fopen("films.txt", "r");
+	printf("Enter the name of film: ");
+	fgets(name, 100, stdin);
+	printf("Enter year: ");
+	fgets(year, 10, stdin);
+	printf("Enter the country or countries: ");
+	fgets(country, 100, stdin);
+	printf("Enter genre or genres: ");
+	fgets(genre, 100, stdin);
+	printf("Enter the grade of film: ");
+	fgets(grade, 5, stdin);
+
+	fclose(fp);
+	List *p, *film;
+	fp = fopen("films.txt", "a+");
+	film = (List *)malloc(sizeof(List));
+	strcpy(film->films.name, name);
+	strcpy(film->films.year, year);
+	strcpy(film->films.country, country);
+	strcpy(film->films.genre, genre);
+	strcpy(film->films.grade, grade);
+
+	p = head->next;
+	head->next = film;
+	film->next = p;
+	film->prev = head;
+	p->prev = film;
+
+	fprintf(fp, "%s", name);
+	fprintf(fp, "%s", year);
+	fprintf(fp, "%s", country);
+	fprintf(fp, "%s", genre);
+	fprintf(fp, "%s", grade);
+
+	fclose(fp);
+}
+
+void delete_film(List *film, User *user, List *fav_list){
+	char c, n;
+	int f = 1;
+	char name[100], log[100];
+	int k = 0, m = 0, x = 0;
+
+	while(f){
+		system("clear");
+		print(film);		
+		c = getch();
+		switch(c){
+			case 'a':
+				film = film->prev;
+				system("clear");
+				print(film);
+				break;
+			case 'd':
+				film = film->next;
+				system("clear");
+				print(film);
+				break;
+			case 'g':
+				printf("Are you sure that you want to delete '%s' from film catalog?\n\n\n", film->films.name);
+				printf("1|Yes\t\t\t\t\t\t\t2|No\n\n");
+				n = getch();
+				if(n == '1'){
+					// char name[100], log[100];
+					// int k = 0, m = 0;
+					FILE *film_list, *new_film_list;
+					film_list = fopen("films.txt", "r");
+					new_film_list = fopen("new_film_list.txt", "w");
+					strcpy(name, film->films.name);
+
+					List *p = fav_list;
+					do{
+						if(strcmp(p->films.name, name) == 0){
+							x = 1;
+							break;
+						}
+						p = p->next;
+					}while(p != fav_list);
+					if(x){
+						fav_list = p;
+						fav_list = fav_list->next;
+						del_el(fav_list->prev);
+						user->fav_num--;
+					}
+
+
+					while(!feof(film_list)){
+						if(k == file_lines("films.txt"))
+							break;
+						fgets(log, 100, film_list);
+						if(strcmp(log, name) == 0){
+							for(int i=0; i<4; i++)
+								fgets(log, 100, film_list);
+							k += 5;
+							continue;
+						}
+						fprintf(new_film_list, "%s", log);
+						k++;
+					}
+					fclose(film_list);
+					fclose(new_film_list);
+					k = 0;
+
+					char login[22], way_old[50], way_new[50];
+					FILE *old_users_list = fopen("users.txt", "r");
+					FILE *old_fav, *new_fav;
+					FILE *new_users_list = fopen("new_users.txt", "w");
+					char rm_command[65];
+					char mv_command[65];
+					int num_users, f, l = 0;
+					while(k < file_lines("users.txt")){
+						fscanf(old_users_list, "%s", login);
+						fprintf(new_users_list, "%s\n", login);
+						strcpy(way_old, "");
+						strcpy(way_new, "");						
+						strcat(way_old, "favorites/favorites_");
+						strcat(way_new, "favorites/new_favorites_");
+						strcat(way_old, login);
+						strcat(way_new, login);
+						old_fav = fopen(way_old, "r");
+						new_fav = fopen(way_new, "w");
+						while(m < file_lines(way_old)){
+							fgets(log, 100, old_fav);
+							if(strcmp(log, name) == 0){
+								for(int i=0; i<4; i++){
+									 l = 1;
+									fgets(log, 100, old_fav);
+								}
+								m += 5;
+								continue;
+							}
+							fprintf(new_fav, "%s", log);
+							m++;
+						}
+						fclose(old_fav);
+						fclose(new_fav);
+						strcpy(rm_command, "");
+						strcpy(mv_command, "");
+						strcat(rm_command, "rm ");
+						strcat(mv_command, "mv ");
+						strcat(rm_command, way_old);
+						strcat(mv_command, way_new);
+						strcat(mv_command, " ");
+						strcat(mv_command, way_old);
+						system(rm_command);
+						system(mv_command);
+						m = 0;
+						for(int i=0; i<2; i++){
+							fscanf(old_users_list, "%s", login);
+							fprintf(new_users_list, "%s\n", login);
+						}
+						fscanf(old_users_list, "%d", &f);
+						if(l)
+							f--;
+						fprintf(new_users_list, "%d\n", f);
+						fscanf(old_users_list, "%s", login);
+						fprintf(new_users_list, "%s\n", login);
+
+						k += 5;
+						l = 0;
+						f = 0;
+					}
+					fclose(old_users_list);
+					fclose(new_users_list);
+					system("rm films.txt");
+					system("mv new_film_list.txt films.txt");
+					system("rm users.txt");
+					system("mv new_users.txt users.txt");
+					system("clear");
+					printf("'%s' deleted!\n");
+					film = film->next;
+					del_el(film->prev);
+					print(film);
+				}
+				else if(n == '2')
+					print(film);
+				else{
+					print(film);
+				}
+
+				break;
+			case'e':
+				f = 0;
+				break;
+		}
+	}
 }
